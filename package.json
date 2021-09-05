@@ -1,0 +1,27 @@
+{
+  "name": "mail-buster",
+  "version": "1.0.0",
+  "description": "",
+  "main": "mailer.js",
+  "type": "module",
+  "scripts": {
+    "start": "node mailer.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mosheur15/mail-buster.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mosheur15/mail-buster/issues"
+  },
+  "homepage": "https://github.com/mosheur15/mail-buster#readme",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^8.1.0",
+    "enquirer": "^2.3.6",
+    "nodemailer": "^6.6.3"
+  }
+}
