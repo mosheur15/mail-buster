@@ -2,10 +2,10 @@
   "name": "mail-buster",
   "version": "1.0.0",
   "description": "",
-  "main": "mailer.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node mailer.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -22,6 +22,7 @@
     "chalk": "^4.1.2",
     "commander": "^8.1.0",
     "enquirer": "^2.3.6",
+    "joi": "^17.4.2",
     "nodemailer": "^6.6.3"
   }
 }
