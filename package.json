@@ -20,7 +20,7 @@
   "homepage": "https://github.com/mosheur15/mail-buster#readme",
   "dependencies": {
     "chalk": "^4.1.2",
-    "commander": "^8.1.0",
+    "commander": "^8.2.0",
     "enquirer": "^2.3.6",
     "joi": "^17.4.2",
     "nodemailer": "^6.6.3"

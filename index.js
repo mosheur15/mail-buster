@@ -1,74 +1,99 @@
 'use strict'
 import nodemailer from 'nodemailer'
 import commander from 'commander'
-import chalk from 'chalk'
+import enquirer from 'enquirer'
+import path from 'path'
 import fs from 'fs'
-import input from './lib/promptQuery.js'
-import loadJson from './lib/jsonLoader.js'
-import validators from './lib/validators.js'
+import joi from 'joi'
 
 
-async function parseArgs(args) {
-    let parsed = {}
-    
-    if (args.sender){
-        let list = args.sender.split(':').filter(a=>a)
-        let addr = list[0].trim()
-        let pass = args.sender.replace(list[0]+':', '')
-        
-        if (!validators.validateAddress(addr)){
-            console.log(`${ chalk.red('Error:') } invalid email address '${ addr }'`)
-            process.exit()
+function GenTransport(user, pass, host, port) {
+    return nodemailer.createTransport({
+        host: host,
+        port: port,
+        auth: {
+            user: user,
+            pass: pass,
         }
-        
-        if (!pass){
-            pass = await input.password(`password for (${ addr })`)
-        }
-        
-        parsed.sender = { addr, pass }
-    }
-    else {
-        parsed.sender = {
-            addr: await input.sender ('sender address'),
-            pass: await input.password ('password'),
-        }
-    }
-    
-    if (args.reciver){
-        let tmp = []
-        for (let item in args.reciver){
-            let is_file = validators.pathStat(item).file
-            let is_addr = validators.validateAddress(item)
-            if (!(is_file || is_addr)){
-                console.log(`${chalk.red('Error:')} '${ item }' is not a valid address or a filename.`)
-                process.exit
-            }
-            if (is_file && is_addr){
-                console.log(`'${ item }' is a valid address also a file path.`)
-                process.exit()
-            }
-            if (is_file){
-                let buff = fs.readFileSync(item, 'utf-8')
-                let list = buff.split('\n').filter(a=>a.trim())
-                tmp      = [ ...tmp, ...list]
-            }
-        }
+    })
+}
+
+
+function parseArgs(args){
+    return commander.program.version('1.0.0')
+        .requiredOption('-s, --sender <address>', 'sender address.')
+        .requiredOption('-t, --target <address...>', 'reciver addtesses.')
+        .option('-h, --host <host>', 'hostname of sender address.')
+        .option('-p, --port <port>', 'port to connect with host')
+        .parse(args)
+        .opts()
+}
+
+async function getPass(msg){
+    let ans = await enquirer.prompt({
+        type: 'password',
+        name: 'value',
+        message: msg,
+        validate: val => val.trim() ? true : false,
+    })
+    return ans.value
+}
+
+async function input(msg){
+    let ans = await enquirer.prompt({
+        type: 'input',
+        name: 'value',
+        message: msg,
+        validate: val => val.trim() ? true : false,
+    })
+    return ans.value
+}
+
+function validAddr(addr){
+    let validation = joi.string()
+        .email()
+        .required()
+        .validate(addr)
+    return validation.error ? false : true
+}
+
+function services(filePath){
+    try{
+        if (!fs.existsSync(filePath)) return false
+        if (!fs.lstatSync(filePath).isFile()) return false
+        let buffer = fs.readFileSync(filePath, 'utf-8')
+        return JSON.parse(buffer)
+    }catch(e){
+        return false
     }
 }
 
-async function main() {
-    const settings = loadJson('./package.json') // load package.json
-    const version  = settings.version           // get package version from package.json
-    const program  = commander.program
+
+async function main(){
+    let args = await parseArgs(process.argv)
     
-    program.version(version)
-    .option('-s, --sender <address>', 'sender email address.')
-    .option('-r, --reciver <address...>', 'reciver email addresses.')
-    .option('-S, --save', 'save login info to avoid entering password.')
-    .parse(process.argv)
+    for (let addr of [args.sender, ...args.target]){
+        if (!validAddr(addr)){
+            console.error(`invalid address '${addr}'`)
+            process.exit()
+        }
+    }
     
-    const args = parseArgs(program.opts())
-    console.log(args)
+    let servInfo = services(path.resolve('services.json'))
+    if (!servInfo){
+        console.warn(`cannot load '${ path.resolve('services.json') }' invlaid file!`)
+        servInfo = {}
+    }
+    
+    let srvName  = args.sender.split('@')[1].split('.')[0]
+    let senderSrv
+    
+    if (!servInfo[srvName]){
+        senderSrv = {
+            host: await input('hostname'),
+            port: await input('port'),
+        }
+    }
 }
 
 await main()
